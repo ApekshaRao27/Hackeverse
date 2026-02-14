@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true,
+      unique: true,   // creates index automatically
       trim: true,
       lowercase: true,
     },
@@ -37,7 +37,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 
 export const User = mongoose.model("User", userSchema);
