@@ -1,22 +1,29 @@
 import { useState } from "react";
 import axios from "axios";
 import "./Auth.css";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
+  const navigate = useNavigate(); 
+
+  // State for login/register toggle
   const [isLogin, setIsLogin] = useState(true);
+
+  // Form state
   const [form, setForm] = useState({
     name: "",
     email: "",
     role: "student",
   });
 
+  // Handle input changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const url = isLogin
         ? "http://localhost:5000/api/auth/login"
@@ -26,8 +33,18 @@ const Auth = () => {
 
       const res = await axios.post(url, payload);
 
-      alert("Success!");
-      console.log(res.data);
+      const user = res.data;
+
+      // Redirect based on role
+      if (isLogin) {
+        if (user.role === "teacher") navigate("/teacher-dashboard");
+        else navigate("/student-dashboard");
+      } else {
+        // after register, redirect to login
+        setIsLogin(true);
+        alert("Account created! Please login.");
+      }
+
     } catch (err) {
       alert(err.response?.data?.error || "Something went wrong");
     }
@@ -45,6 +62,7 @@ const Auth = () => {
                 type="text"
                 name="name"
                 placeholder="Full Name"
+                value={form.name}
                 onChange={handleChange}
                 required
                 className="auth-input"
@@ -52,6 +70,7 @@ const Auth = () => {
 
               <select
                 name="role"
+                value={form.role}
                 onChange={handleChange}
                 className="auth-input"
               >
@@ -65,6 +84,7 @@ const Auth = () => {
             type="email"
             name="email"
             placeholder="Email Address"
+            value={form.email}
             onChange={handleChange}
             required
             className="auth-input"
