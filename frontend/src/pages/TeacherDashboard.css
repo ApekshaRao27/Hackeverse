@@ -1,0 +1,165 @@
+/* Main Container */
+.teacher-dashboard {
+    padding: 40px;
+    background: #f5f7fb;
+    min-height: 100vh;
+    font-family: "Segoe UI", sans-serif;
+  }
+  
+  /* Header */
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 28px;
+    margin: 0;
+    color: #1e293b;
+  }
+  
+  .subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+  
+  /* Create Quiz Button */
+  .create-quiz-btn {
+    padding: 12px 22px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .create-quiz-btn:hover {
+    background: #3730a3;
+    transform: translateY(-2px);
+  }
+  
+  /* Overview Cards */
+  .overview-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  
+  .overview-card {
+    background: white;
+    padding: 22px;
+    border-radius: 14px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.04);
+    transition: 0.3s;
+  }
+  
+  .overview-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .overview-card h3 {
+    font-size: 15px;
+    color: #64748b;
+    margin-bottom: 10px;
+  }
+  
+  .metric {
+    font-size: 24px;
+    font-weight: bold;
+    color: #4f46e5;
+  }
+  
+  .highlight {
+    color: #ef4444;
+  }
+  
+  /* Analytics Section */
+  .analytics-section h2 {
+    font-size: 22px;
+    margin-bottom: 20px;
+    color: #1e293b;
+  }
+  
+  /* Grid */
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  
+  /* Analytics Cards */
+  .analytics-card {
+    background: white;
+    padding: 22px;
+    border-radius: 14px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.04);
+    transition: 0.3s;
+  }
+  
+  .analytics-card:hover {
+    transform: translateY(-4px);
+  }
+  
+  .analytics-card h4 {
+    margin-bottom: 15px;
+    color: #334155;
+  }
+  
+  /* Chart Placeholder */
+  .chart-placeholder {
+    height: 160px;
+    background: linear-gradient(135deg, #e0e7ff, #f3e8ff);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  /* Lists */
+  .list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    color: #334155;
+  }
+  
+  .list li:last-child {
+    border-bottom: none;
+  }
+  
+  .list.weak li {
+    color: #ef4444;
+    font-weight: 500;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .teacher-dashboard {
+      padding: 20px;
+    }
+  
+    .dashboard-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
+    }
+  
+    .create-quiz-btn {
+      width: 100%;
+    }
+  }
