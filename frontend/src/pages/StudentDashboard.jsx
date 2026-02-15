@@ -1,25 +1,35 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import Confetti from "react-confetti";
+import { useNavigate, Link } from "react-router-dom";
 import "./StudentDashboard.css";
-
+import ChatBot from "../pages/ChatBot";
 const StudentDashboard = () => {
   const navigate = useNavigate();
 
+  /* ---------------- STATE ---------------- */
+
   const [quizSets, setQuizSets] = useState([]);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [filteredQuestions, setFilteredQuestions] = useState([]);
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState("");
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
+  const [difficultyFilter, setDifficultyFilter] = useState("all");
+
+  /* Gamification */
   const [xp, setXp] = useState(120);
   const [streak] = useState(4);
+
+  /* ---------------- FETCH QUIZZES ---------------- */
 
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/questions");
+        const res = await axios.get("http://127.0.0.1:5000/api/questions");
         setQuizSets(res.data);
       } catch (err) {
         console.error(err);
@@ -28,8 +38,27 @@ const StudentDashboard = () => {
     fetchQuizzes();
   }, []);
 
+  /* ---------------- APPLY DIFFICULTY FILTER ---------------- */
+
+  useEffect(() => {
+    if (!selectedQuiz) return;
+
+    if (difficultyFilter === "all")
+      setFilteredQuestions(selectedQuiz.questions);
+    else
+      setFilteredQuestions(
+        selectedQuiz.questions.filter(q => q.difficulty === difficultyFilter)
+      );
+
+    setCurrentQuestion(0);
+    setSelectedOption("");
+  }, [selectedQuiz, difficultyFilter]);
+
+  /* ---------------- QUIZ LOGIC ---------------- */
+
   const startQuiz = (quiz) => {
     setSelectedQuiz(quiz);
+    setDifficultyFilter("all");
     setCurrentQuestion(0);
     setSelectedOption("");
     setScore(0);
@@ -39,12 +68,12 @@ const StudentDashboard = () => {
   const handleOptionSelect = (opt) => setSelectedOption(opt);
 
   const handleNext = () => {
-    if (selectedOption === selectedQuiz.questions[currentQuestion].correctAnswer) {
-      setScore((prev) => prev + 1);
-      setXp((prev) => prev + 10); // XP reward
+    if (selectedOption === filteredQuestions[currentQuestion].correctAnswer) {
+      setScore(prev => prev + 1);
+      setXp(prev => prev + 10); // XP reward
     }
 
-    if (currentQuestion + 1 < selectedQuiz.questions.length) {
+    if (currentQuestion + 1 < filteredQuestions.length) {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedOption("");
     } else {
@@ -52,79 +81,89 @@ const StudentDashboard = () => {
     }
   };
 
-  const handleBattle = () => {
-    navigate("/battle");
-  };
+  const handleBattle = () => navigate("/battle");
 
-  // NAVBAR
+  /* ---------------- NAVBAR ---------------- */
+
   const Navbar = () => (
     <nav className="navbar">
       <h2 className="navbar-brand">🚀 QuizMaster</h2>
       <ul className="navbar-links">
-        <li>Quizzes</li>
-        <li>Leaderboard</li>
-        <li>Profile</li>
+        <li><Link to="/student" className="nav-link">Quiz</Link></li>
+        <li><Link to="/learning" className="nav-link">Learning</Link></li>
+        <li><Link to="/" className="nav-link">Profile</Link></li>
       </ul>
     </nav>
   );
 
-  /* ========================= */
-  /* QUIZ RESULT */
-  /* ========================= */
+  /* ================= RESULT SCREEN ================= */
+
   if (showResult)
     return (
       <div>
         <Navbar />
-        <div className="quiz-container">
-          <h2>{selectedQuiz.title}</h2>
-          <p className="result-score">
-            🎯 Your Score: {score} / {selectedQuiz.questions.length}
+        <Confetti recycle={false} numberOfPieces={300} />
+        <div className="quiz-result">
+          <h2>🎉 Quiz Completed!</h2>
+          <p className="score">
+            You scored {score} / {filteredQuestions.length}
           </p>
-          <button className="primary-btn" onClick={() => setSelectedQuiz(null)}>
+
+          <button
+            className="primary-btn"
+            onClick={() => setSelectedQuiz(null)}
+          >
             Back to Dashboard
           </button>
         </div>
       </div>
     );
 
-  /* ========================= */
-  /* QUIZ VIEW */
-  /* ========================= */
+  /* ================= QUIZ VIEW ================= */
+
   if (selectedQuiz) {
-    const question = selectedQuiz.questions[currentQuestion];
+    const question = filteredQuestions[currentQuestion];
 
     return (
       <div>
         <Navbar />
         <div className="quiz-container">
           <h2>{selectedQuiz.title}</h2>
+
+          {/* Progress Bar */}
           <div className="progress-bar">
             <div
               className="progress-fill"
               style={{
-                width: `${
-                  ((currentQuestion + 1) /
-                    selectedQuiz.questions.length) *
-                  100
-                }%`,
+                width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%`
               }}
-            ></div>
+            />
+          </div>
+
+          {/* Difficulty Filter */}
+          <div className="difficulty-filter">
+            {["all", "easy", "medium", "hard"].map(level => (
+              <button
+                key={level}
+                className={`filter-btn ${difficultyFilter === level ? "active" : ""}`}
+                onClick={() => setDifficultyFilter(level)}
+              >
+                {level}
+              </button>
+            ))}
           </div>
 
           <p>
-            Question {currentQuestion + 1} of{" "}
-            {selectedQuiz.questions.length}
+            Question {currentQuestion + 1} of {filteredQuestions.length}
           </p>
 
           <h3>{question.questionText}</h3>
 
           <ul className="options-list">
-            {question.options.map((opt) => (
+            {question.options.map(opt => (
               <li key={opt}>
                 <button
-                  className={`option-button ${
-                    selectedOption === opt ? "selected" : ""
-                  }`}
+                  className={`option-button ${selectedOption === opt ? "selected" : ""}`}
                   onClick={() => handleOptionSelect(opt)}
                 >
                   {opt}
@@ -138,36 +177,31 @@ const StudentDashboard = () => {
             onClick={handleNext}
             disabled={!selectedOption}
           >
-            {currentQuestion + 1 === selectedQuiz.questions.length
-              ? "Submit"
-              : "Next"}
+            {currentQuestion + 1 === filteredQuestions.length ? "Submit" : "Next"}
           </button>
         </div>
       </div>
     );
   }
 
-  /* ========================= */
-  /* DASHBOARD VIEW */
-  /* ========================= */
+  /* ================= DASHBOARD VIEW ================= */
+
   return (
     <div>
       <Navbar />
 
       <div className="dashboard-container">
+
         {/* XP Section */}
         <div className="xp-card">
           <h3>🔥 {streak} Day Streak</h3>
           <p>Total XP: {xp}</p>
           <div className="xp-bar">
-            <div
-              className="xp-fill"
-              style={{ width: `${xp % 100}%` }}
-            ></div>
+            <div className="xp-fill" style={{ width: `${xp % 100}%` }}></div>
           </div>
         </div>
 
-        {/* Battle Section */}
+        {/* Battle Mode */}
         <div className="battle-card">
           <h2>⚔️ Battle Mode</h2>
           <p>Compete with students in real-time quiz battles!</p>
@@ -180,12 +214,8 @@ const StudentDashboard = () => {
         <div className="quiz-list">
           <h2>📚 Available Quizzes</h2>
           <div className="quiz-grid">
-            {quizSets.map((q) => (
-              <div
-                key={q._id}
-                className="quiz-card"
-                onClick={() => startQuiz(q)}
-              >
+            {quizSets.map(q => (
+              <div key={q._id} className="quiz-card" onClick={() => startQuiz(q)}>
                 <h3>{q.title}</h3>
                 <p>Topic: {q.topic}</p>
                 <p>{q.questions.length} Questions</p>
@@ -205,7 +235,9 @@ const StudentDashboard = () => {
             <li>4️⃣ You - {xp} XP</li>
           </ul>
         </div>
+
       </div>
+      <ChatBot/>
     </div>
   );
 };

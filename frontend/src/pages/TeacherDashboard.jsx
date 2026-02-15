@@ -1,9 +1,49 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./TeacherDashboard.css";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const TeacherDashboard = () => {
-  const navigate = useNavigate(); // 🔥 added
+  const navigate = useNavigate();
+
+  /* ---------- STATE ---------- */
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalQuizzes: 0,
+    totalQuestions: 0
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  /* ---------- FETCH DASHBOARD DATA ---------- */
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get(
+          "http://127.0.0.1:5000/api/dashboard/stats"
+        );
+
+        setStats(res.data);
+      } catch (err) {
+        console.error("Failed to load dashboard stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  /* ---------- LOADING ---------- */
+  if (loading) {
+    return (
+      <div className="teacher-dashboard">
+        <h2 style={{ textAlign: "center", marginTop: "100px" }}>
+          Loading dashboard...
+        </h2>
+      </div>
+    );
+  }
 
   return (
     <div className="teacher-dashboard">
@@ -17,7 +57,6 @@ const TeacherDashboard = () => {
           </p>
         </div>
 
-        {/* 🔥 Updated Button */}
         <button
           className="create-quiz-btn"
           onClick={() => navigate("/create-quiz")}
@@ -28,25 +67,31 @@ const TeacherDashboard = () => {
 
       {/* Overview Cards */}
       <div className="overview-section">
+
+        {/* Total Students */}
         <div className="overview-card">
           <h3>Total Students</h3>
-          <p className="metric">120</p>
+          <p className="metric">{stats.totalStudents}</p>
         </div>
 
+        {/* Average Score (temporary derived) */}
         <div className="overview-card">
-          <h3>Average Class Score</h3>
-          <p className="metric">78%</p>
+          <h3>Total Questions</h3>
+          <p className="metric">{stats.totalQuestions}</p>
         </div>
 
+        {/* Total Quizzes */}
         <div className="overview-card">
           <h3>Active Quizzes</h3>
-          <p className="metric">6</p>
+          <p className="metric">{stats.totalQuizzes}</p>
         </div>
 
+        {/* Weak Topic (placeholder until analytics added) */}
         <div className="overview-card">
           <h3>Most Weak Topic</h3>
-          <p className="metric highlight">Operating Systems</p>
+          <p className="metric highlight">Coming Soon</p>
         </div>
+
       </div>
 
       {/* Analytics Section */}
@@ -54,39 +99,35 @@ const TeacherDashboard = () => {
         <h2>Student Performance Analytics</h2>
 
         <div className="analytics-grid">
+
           <div className="analytics-card">
             <h4>Topic-wise Accuracy</h4>
             <div className="chart-placeholder">
-              [ Bar Chart Placeholder ]
+              (Will connect charts next)
             </div>
           </div>
 
           <div className="analytics-card">
             <h4>Performance Trend (Last 7 Days)</h4>
             <div className="chart-placeholder">
-              [ Line Chart Placeholder ]
+              (Requires attempt tracking API)
             </div>
           </div>
 
           <div className="analytics-card">
             <h4>Top Performers</h4>
             <ul className="list">
-              <li>Rahul – 92%</li>
-              <li>Ananya – 89%</li>
-              <li>Vikram – 87%</li>
-              <li>Sneha – 85%</li>
+              <li>Data available after students attempt quizzes</li>
             </ul>
           </div>
 
           <div className="analytics-card">
             <h4>Weak Topics Overview</h4>
             <ul className="list weak">
-              <li>Deadlock – 52%</li>
-              <li>TCP/IP – 60%</li>
-              <li>Probability – 58%</li>
-              <li>Paging – 55%</li>
+              <li>Analytics unlocks after quiz attempts</li>
             </ul>
           </div>
+
         </div>
       </div>
 

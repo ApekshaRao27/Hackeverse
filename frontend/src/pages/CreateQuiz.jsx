@@ -1,201 +1,152 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./CreateQuiz.css";
 
 const CreateQuiz = () => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  const [title, setTitle] = useState("");
-  const [topic, setTopic] = useState("");
+  const [quiz, setQuiz] = useState({
+    title: "",
+    topic: "",
+    questions: [
+      { questionText: "", options: ["", "", "", ""], correctAnswer: "", difficulty: "easy" }
+    ],
+  });
 
-  const [questions, setQuestions] = useState([
-    {
-      questionText: "",
-      options: ["", "", "", ""],
-      correctAnswer: "",
-      difficulty: "easy", // must be lowercase
-    },
-  ]);
-
-  const handleQuestionChange = (index, field, value) => {
-    const updated = [...questions];
-    updated[index][field] = value;
-    setQuestions(updated);
+  // Handle Title and Topic change
+  const handleHeaderChange = (e) => {
+    setQuiz({ ...quiz, [e.target.name]: e.target.value });
   };
 
-  const handleOptionChange = (qIndex, optIndex, value) => {
-    const updated = [...questions];
-    updated[qIndex].options[optIndex] = value;
-
-    // If option changed and it was correct answer, reset
-    if (updated[qIndex].correctAnswer === value) {
-      updated[qIndex].correctAnswer = "";
-    }
-
-    setQuestions(updated);
+  // Handle Question text, answer, and difficulty
+  const handleQuestionChange = (index, e) => {
+    const newQuestions = [...quiz.questions];
+    newQuestions[index][e.target.name] = e.target.value;
+    setQuiz({ ...quiz, questions: newQuestions });
   };
 
+  // Handle specific Option changes
+  const handleOptionChange = (qIndex, oIndex, value) => {
+    const newQuestions = [...quiz.questions];
+    newQuestions[qIndex].options[oIndex] = value;
+    setQuiz({ ...quiz, questions: newQuestions });
+  };
+
+  // Add a new question block
   const addQuestion = () => {
-    setQuestions([
-      ...questions,
-      {
-        questionText: "",
-        options: ["", "", "", ""],
-        correctAnswer: "",
-        difficulty: "easy",
-      },
-    ]);
+    setQuiz({
+      ...quiz,
+      questions: [...quiz.questions, { questionText: "", options: ["", "", "", ""], correctAnswer: "", difficulty: "easy" }]
+    });
   };
 
-  const removeQuestion = (index) => {
-    const updated = questions.filter((_, i) => i !== index);
-    setQuestions(updated);
-  };
-
-  const validateForm = () => {
-    if (!title.trim()) {
-      alert("Title is required");
-      return false;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // 1. Get the data from localStorage
+    const rawData = localStorage.getItem("user");
+    if (!rawData) {
+      alert("No user found. Please login again.");
+      return navigate("/");
     }
-
-    if (!topic.trim()) {
-      alert("Topic is required");
-      return false;
+  
+    const storedUser = JSON.parse(rawData);
+  
+    // 2. Extract the ID (Handles: _id, id, or if storedUser is an array)
+    const userData = Array.isArray(storedUser) ? storedUser[0] : storedUser;
+    const teacherId = userData?._id || userData?.id;
+  
+    if (!teacherId) {
+      console.error("User object in storage:", userData);
+      alert("Error: Teacher ID not found in session. Please re-login.");
+      return;
     }
-
-    if (questions.length === 0) {
-      alert("At least one question required");
-      return false;
-    }
-
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
-
-      if (!q.questionText.trim()) {
-        alert(`Question ${i + 1} text required`);
-        return false;
-      }
-
-      if (q.options.some((opt) => !opt.trim())) {
-        alert(`All 4 options required for Question ${i + 1}`);
-        return false;
-      }
-
-      if (!q.correctAnswer.trim()) {
-        alert(`Select correct answer for Question ${i + 1}`);
-        return false;
-      }
-
-      if (!["easy", "medium", "hard"].includes(q.difficulty)) {
-        alert(`Invalid difficulty for Question ${i + 1}`);
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-
+  
+    const payload = {
+      ...quiz,
+      createdBy: teacherId // Now guaranteed to be a string
+    };
+  console.log("Payload:", payload);
     try {
-      const payload = {
-        title: title.trim(),
-        topic: topic.trim(),
-        questions,
-      };
-
-      console.log("SENDING:", payload);
-
       await axios.post("http://localhost:5000/api/questions", payload);
-
       alert("Quiz Created Successfully!");
-      navigate("/teacher");
-
+      navigate("/teacher-dashboard");
     } catch (err) {
-      console.log("BACKEND ERROR:", err.response?.data);
-      alert(JSON.stringify(err.response?.data, null, 2));
+      console.error("Backend Error:", err.response?.data);
+      alert(err.response?.data?.error || "Check console for validation errors");
     }
   };
 
   return (
     <div className="create-quiz-container">
-      <h1>Create Quiz</h1>
-
-      <input
-        type="text"
-        placeholder="Quiz Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-
-      <input
-        type="text"
-        placeholder="Topic"
-        value={topic}
-        onChange={(e) => setTopic(e.target.value)}
-      />
-
-      {questions.map((q, qIndex) => (
-        <div key={qIndex} className="question-box">
-
+      <h2>Create New Quiz Set</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="quiz-header-inputs">
           <input
-            type="text"
-            placeholder="Question"
-            value={q.questionText}
-            onChange={(e) =>
-              handleQuestionChange(qIndex, "questionText", e.target.value)
-            }
+            name="title"
+            placeholder="Quiz Title (e.g. Midterm OS)"
+            onChange={handleHeaderChange}
+            required
           />
-
-          {q.options.map((opt, optIndex) => (
-            <input
-              key={optIndex}
-              type="text"
-              placeholder={`Option ${optIndex + 1}`}
-              value={opt}
-              onChange={(e) =>
-                handleOptionChange(qIndex, optIndex, e.target.value)
-              }
-            />
-          ))}
-
-          <select
-            value={q.correctAnswer}
-            onChange={(e) =>
-              handleQuestionChange(qIndex, "correctAnswer", e.target.value)
-            }
-          >
-            <option value="">Select Correct Answer</option>
-            {q.options.map((opt, i) => (
-              <option key={i} value={opt}>
-                {opt || `Option ${i + 1}`}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={q.difficulty}
-            onChange={(e) =>
-              handleQuestionChange(qIndex, "difficulty", e.target.value)
-            }
-          >
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-
-          {questions.length > 1 && (
-            <button onClick={() => removeQuestion(qIndex)}>
-              Remove Question
-            </button>
-          )}
+          <input
+            name="topic"
+            placeholder="Topic (e.g. Operating Systems)"
+            onChange={handleHeaderChange}
+            required
+          />
         </div>
-      ))}
 
-      <button onClick={addQuestion}>+ Add Question</button>
-      <button onClick={handleSubmit}>Submit Quiz</button>
+        {quiz.questions.map((q, qIndex) => (
+          <div key={qIndex} className="question-box">
+            <h4>Question {qIndex + 1}</h4>
+            <input
+              name="questionText"
+              placeholder="Enter Question"
+              value={q.questionText}
+              onChange={(e) => handleQuestionChange(qIndex, e)}
+              required
+            />
+            
+            <div className="options-grid">
+              {q.options.map((opt, oIndex) => (
+                <input
+                  key={oIndex}
+                  placeholder={`Option ${oIndex + 1}`}
+                  value={opt}
+                  onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
+                  required
+                />
+              ))}
+            </div>
+
+            <div className="meta-inputs">
+              <input
+                name="correctAnswer"
+                placeholder="Correct Answer"
+                value={q.correctAnswer}
+                onChange={(e) => handleQuestionChange(qIndex, e)}
+                required
+              />
+              <select
+                name="difficulty"
+                value={q.difficulty}
+                onChange={(e) => handleQuestionChange(qIndex, e)}
+              >
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+          </div>
+        ))}
+
+        <div className="form-actions">
+          <button type="button" onClick={addQuestion}>+ Add Question</button>
+          <button type="submit">Submit Quiz Set</button>
+        </div>
+      </form>
     </div>
   );
 };
