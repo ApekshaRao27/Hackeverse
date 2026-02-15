@@ -1,14 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import Confetti from "react-confetti";
 import { useNavigate, Link } from "react-router-dom";
-import "./StudentDashboard.css";
+import { XpContext } from "../XPContext.jsx";
+import Leaderboard from "./Leaderboard";
 import ChatBot from "../pages/ChatBot";
+import "./StudentDashboard.css";
+
 const StudentDashboard = () => {
   const navigate = useNavigate();
+  const { xp, addXp } = useContext(XpContext);
 
-  /* ---------------- STATE ---------------- */
-
+  /* ---------- STATE ---------- */
   const [quizSets, setQuizSets] = useState([]);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [filteredQuestions, setFilteredQuestions] = useState([]);
@@ -19,13 +22,10 @@ const StudentDashboard = () => {
   const [showResult, setShowResult] = useState(false);
 
   const [difficultyFilter, setDifficultyFilter] = useState("all");
+  const [lifelineUsed, setLifelineUsed] = useState(false);
+  const [activeTab, setActiveTab] = useState("quizzes");
 
-  /* Gamification */
-  const [xp, setXp] = useState(120);
-  const [streak] = useState(4);
-
-  /* ---------------- FETCH QUIZZES ---------------- */
-
+  /* ---------- FETCH QUIZZES ---------- */
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
@@ -38,8 +38,7 @@ const StudentDashboard = () => {
     fetchQuizzes();
   }, []);
 
-  /* ---------------- APPLY DIFFICULTY FILTER ---------------- */
-
+  /* ---------- APPLY FILTER ---------- */
   useEffect(() => {
     if (!selectedQuiz) return;
 
@@ -52,170 +51,223 @@ const StudentDashboard = () => {
 
     setCurrentQuestion(0);
     setSelectedOption("");
+    setLifelineUsed(false);
   }, [selectedQuiz, difficultyFilter]);
 
-  /* ---------------- QUIZ LOGIC ---------------- */
-
+  /* ---------- START QUIZ ---------- */
   const startQuiz = (quiz) => {
     setSelectedQuiz(quiz);
-    setDifficultyFilter("all");
-    setCurrentQuestion(0);
-    setSelectedOption("");
     setScore(0);
     setShowResult(false);
   };
 
+  /* ---------- OPTION SELECT ---------- */
   const handleOptionSelect = (opt) => setSelectedOption(opt);
 
+  /* ---------- 50-50 LIFELINE ---------- */
+  const useFiftyFifty = () => {
+    if (lifelineUsed) return;
+
+    const correct = filteredQuestions[currentQuestion].correctAnswer;
+    const options = filteredQuestions[currentQuestion].options;
+    const wrong = options.filter(o => o !== correct);
+    const reduced = [correct, wrong[Math.floor(Math.random() * wrong.length)]];
+
+    setFilteredQuestions(prev => {
+      const copy = [...prev];
+      copy[currentQuestion] = { ...copy[currentQuestion], options: reduced };
+      return copy;
+    });
+
+    setLifelineUsed(true);
+  };
+
+  /* ---------- NEXT QUESTION ---------- */
   const handleNext = () => {
+
     if (selectedOption === filteredQuestions[currentQuestion].correctAnswer) {
+
+      let gainedXP = 0;
+      const diff = filteredQuestions[currentQuestion].difficulty;
+
+      if (diff === "easy") gainedXP = 10;
+      if (diff === "medium") gainedXP = 20;
+      if (diff === "hard") gainedXP = 30;
+
+      if (lifelineUsed) gainedXP = Math.floor(gainedXP / 2);
+
+      addXp(gainedXP);
       setScore(prev => prev + 1);
-      setXp(prev => prev + 10); // XP reward
     }
 
     if (currentQuestion + 1 < filteredQuestions.length) {
-      setCurrentQuestion(currentQuestion + 1);
+      setCurrentQuestion(prev => prev + 1);
       setSelectedOption("");
+      setLifelineUsed(false);
     } else {
       setShowResult(true);
+      setTimeout(() => {
+        setSelectedQuiz(null);
+        setShowResult(false);
+      }, 3000);
     }
   };
 
-  const handleBattle = () => navigate("/battle");
-
-  /* ---------------- NAVBAR ---------------- */
-
+  /* ---------- NAVBAR ---------- */
   const Navbar = () => (
     <nav className="navbar">
       <h2 className="navbar-brand">🚀 QuizMaster</h2>
       <ul className="navbar-links">
-        <li><Link to="/student" className="nav-link">Quiz</Link></li>
-        <li><Link to="/learning" className="nav-link">Learning</Link></li>
-        <li><Link to="/" className="nav-link">Profile</Link></li>
+
+        <li>
+          <span
+            className={`nav-link ${activeTab === "quizzes" ? "active" : ""}`}
+            onClick={() => {
+              setActiveTab("quizzes");
+              setSelectedQuiz(null);
+            }}
+            style={{cursor:"pointer"}}
+          >
+            Quiz
+          </span>
+        </li>
+
+        <li>
+          <Link to="/learning" className="nav-link">Learning</Link>
+        </li>
+
+        <li>
+          <span
+            className={`nav-link ${activeTab === "leaderboard" ? "active" : ""}`}
+            onClick={() => setActiveTab("leaderboard")}
+            style={{cursor:"pointer"}}
+          >
+            Leaderboard 🏆
+          </span>
+        </li>
+
       </ul>
+
+      {/* <div className="xp-display">⭐ XP: {xp}</div> */}
     </nav>
   );
 
-  /* ================= RESULT SCREEN ================= */
+  /* ---------- LEADERBOARD TAB ---------- */
+  if (activeTab === "leaderboard")
+    return (
+      <>
+        <Navbar/>
+        <Leaderboard/>
+        <ChatBot/>
+      </>
+    );
 
+  /* ---------- RESULT SCREEN ---------- */
   if (showResult)
     return (
-      <div>
-        <Navbar />
-        <Confetti recycle={false} numberOfPieces={300} />
+      <>
+        <Navbar/>
+        <Confetti recycle={false} numberOfPieces={300}/>
         <div className="quiz-result">
           <h2>🎉 Quiz Completed!</h2>
           <p className="score">
             You scored {score} / {filteredQuestions.length}
           </p>
-
-          <button
-            className="primary-btn"
-            onClick={() => setSelectedQuiz(null)}
-          >
-            Back to Dashboard
-          </button>
         </div>
-      </div>
+        <ChatBot/>
+      </>
     );
 
-  /* ================= QUIZ VIEW ================= */
+ /* ---------- QUIZ PLAY SCREEN ---------- */
+if (selectedQuiz) {
 
-  if (selectedQuiz) {
-    const question = filteredQuestions[currentQuestion];
+  const question = filteredQuestions[currentQuestion];
 
+  // ⭐ IMPORTANT GUARD (this prevents crash)
+  if (!question) {
     return (
-      <div>
+      <>
         <Navbar />
         <div className="quiz-container">
-          <h2>{selectedQuiz.title}</h2>
-
-          {/* Progress Bar */}
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%`
-              }}
-            />
-          </div>
-
-          {/* Difficulty Filter */}
-          <div className="difficulty-filter">
-            {["all", "easy", "medium", "hard"].map(level => (
-              <button
-                key={level}
-                className={`filter-btn ${difficultyFilter === level ? "active" : ""}`}
-                onClick={() => setDifficultyFilter(level)}
-              >
-                {level}
-              </button>
-            ))}
-          </div>
-
-          <p>
-            Question {currentQuestion + 1} of {filteredQuestions.length}
-          </p>
-
-          <h3>{question.questionText}</h3>
-
-          <ul className="options-list">
-            {question.options.map(opt => (
-              <li key={opt}>
-                <button
-                  className={`option-button ${selectedOption === opt ? "selected" : ""}`}
-                  onClick={() => handleOptionSelect(opt)}
-                >
-                  {opt}
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <button
-            className="primary-btn"
-            onClick={handleNext}
-            disabled={!selectedOption}
-          >
-            {currentQuestion + 1 === filteredQuestions.length ? "Submit" : "Next"}
-          </button>
+          <h2>Preparing quiz...</h2>
+          <p>Loading questions...</p>
         </div>
-      </div>
+        <ChatBot/>
+      </>
     );
   }
 
-  /* ================= DASHBOARD VIEW ================= */
-
   return (
-    <div>
-      <Navbar />
+    <>
+      <Navbar/>
+
+      <div className="quiz-container">
+        <h2>{selectedQuiz.title}</h2>
+
+        <div className="difficulty-filter">
+          {["all","easy","medium","hard"].map(level=>(
+            <button
+              key={level}
+              className={`filter-btn ${difficultyFilter===level?"active":""}`}
+              onClick={()=>setDifficultyFilter(level)}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
+
+        <p>Question {currentQuestion+1} of {filteredQuestions.length}</p>
+
+        <h3>{question.questionText}</h3>
+
+        <ul className="options-list">
+          {question.options?.map(opt=>(
+            <li key={opt}>
+              <button
+                className={`option-button ${selectedOption===opt?"selected":""}`}
+                onClick={()=>handleOptionSelect(opt)}
+              >
+                {opt}
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <div className="quiz-actions">
+          <button className="lifeline-btn" disabled={lifelineUsed} onClick={useFiftyFifty}>
+            50-50 Lifeline
+          </button>
+
+          <button className="next-button" disabled={!selectedOption} onClick={handleNext}>
+            {currentQuestion+1===filteredQuestions.length?"Submit":"Next"}
+          </button>
+        </div>
+      </div>
+
+      <ChatBot/>
+    </>
+  );
+}
+  /* ---------- DASHBOARD HOME ---------- */
+  return (
+    <>
+      <Navbar/>
 
       <div className="dashboard-container">
 
-        {/* XP Section */}
-        <div className="xp-card">
-          <h3>🔥 {streak} Day Streak</h3>
-          <p>Total XP: {xp}</p>
-          <div className="xp-bar">
-            <div className="xp-fill" style={{ width: `${xp % 100}%` }}></div>
-          </div>
-        </div>
-
-        {/* Battle Mode */}
         <div className="battle-card">
           <h2>⚔️ Battle Mode</h2>
           <p>Compete with students in real-time quiz battles!</p>
-          <button className="battle-btn" onClick={handleBattle}>
+          <button className="battle-btn" onClick={()=>navigate("/battle")}>
             Enter Battle
           </button>
         </div>
 
-        {/* Quiz List */}
         <div className="quiz-list">
           <h2>📚 Available Quizzes</h2>
           <div className="quiz-grid">
-            {quizSets.map(q => (
-              <div key={q._id} className="quiz-card" onClick={() => startQuiz(q)}>
+            {quizSets.map(q=>(
+              <div key={q._id} className="quiz-card" onClick={()=>startQuiz(q)}>
                 <h3>{q.title}</h3>
                 <p>Topic: {q.topic}</p>
                 <p>{q.questions.length} Questions</p>
@@ -225,20 +277,10 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        {/* Leaderboard */}
-        <div className="leaderboard">
-          <h2>🏆 Leaderboard</h2>
-          <ul>
-            <li>1️⃣ Rahul - 890 XP</li>
-            <li>2️⃣ Ananya - 850 XP</li>
-            <li>3️⃣ Vikram - 820 XP</li>
-            <li>4️⃣ You - {xp} XP</li>
-          </ul>
-        </div>
-
       </div>
+
       <ChatBot/>
-    </div>
+    </>
   );
 };
 

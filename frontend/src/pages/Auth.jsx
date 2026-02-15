@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./Auth.css";
 
 const Auth = () => {
   const navigate = useNavigate();
-
   const [isLogin, setIsLogin] = useState(true);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -28,21 +28,20 @@ const Auth = () => {
       const payload = isLogin ? { email: form.email } : form;
 
       const res = await axios.post(url, payload);
+      const user = res.data;
 
-      const userRole = res.data.role;
+      localStorage.setItem("user", JSON.stringify(user));
+      
 
-      // Optional: store user
-      localStorage.setItem("user", JSON.stringify(res.data));
-
-      if (userRole === "teacher") {
-        navigate("/teacher");
-      } else if (userRole === "student") {
-        navigate("/student");
+      if (isLogin) {
+        if (user.role === "teacher") navigate("/teacher");
+        else navigate("/student");
       } else {
-        alert("Invalid role");
+        setIsLogin(true);
+        alert("Account created! Please login.");
       }
-
     } catch (err) {
+      console.error(err.response?.data || err.message);
       alert(err.response?.data?.error || "Something went wrong");
     }
   };
@@ -61,6 +60,7 @@ const Auth = () => {
                 type="text"
                 name="name"
                 placeholder="Full Name"
+                value={form.name}
                 onChange={handleChange}
                 required
                 className="auth-input"
@@ -82,6 +82,7 @@ const Auth = () => {
             type="email"
             name="email"
             placeholder="Email Address"
+            value={form.email}
             onChange={handleChange}
             required
             className="auth-input"
@@ -92,10 +93,7 @@ const Auth = () => {
           </button>
         </form>
 
-        <p
-          className="auth-toggle"
-          onClick={() => setIsLogin(!isLogin)}
-        >
+        <p className="auth-toggle" onClick={() => setIsLogin(!isLogin)}>
           {isLogin
             ? "Don't have an account? Register"
             : "Already have an account? Login"}

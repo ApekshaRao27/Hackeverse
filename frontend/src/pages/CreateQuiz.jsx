@@ -72,7 +72,7 @@ const CreateQuiz = () => {
     try {
       await axios.post("http://localhost:5000/api/questions", payload);
       alert("Quiz Created Successfully!");
-      navigate("/teacher-dashboard");
+      navigate("/teacher");
     } catch (err) {
       console.error("Backend Error:", err.response?.data);
       alert(err.response?.data?.error || "Check console for validation errors");

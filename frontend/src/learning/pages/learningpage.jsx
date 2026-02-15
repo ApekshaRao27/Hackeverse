@@ -1,4 +1,4 @@
-import LearningHome from "./LearningHome.jsx";
+import LearningHome from "./learninghome.jsx";
 import { useNavigate } from "react-router-dom";
 
 const LearningPage = () => {

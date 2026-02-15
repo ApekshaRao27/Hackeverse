@@ -9,6 +9,8 @@ import Battle from "./pages/Battle";
 import LearningPage from "./learning/pages/learningpage.jsx";
 import SubjectPage from "./learning/pages/subjectPage.jsx";
 import MissionPage from "./learning/pages/MissionPage.jsx";
+import { XpProvider } from "./XPContext.jsx";
+import Leaderboard from "./pages/Leaderboard.jsx";
 function App() {
   return (
     <SocketProvider>
@@ -22,6 +24,7 @@ function App() {
           <Route path="/learning" element={<LearningPage />} />
         <Route path="/subject/:id" element={<SubjectPage />} />
         <Route path="/mission/:id" element={<MissionPage />} />
+        <Route path="leaderboard" element={<Leaderboard/>}/>
         </Routes>
       </BrowserRouter>
     </SocketProvider>

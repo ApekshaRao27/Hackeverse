@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const ROLES = ["student", "teacher"];
@@ -20,6 +21,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ROLES,
       default: "student",
+    },
+    xp: {            
+      type: Number,
+      default: 0,
+      index: true,   // Helps with sorting the leaderboard faster
     },
     passwordHash: {
       type: String,

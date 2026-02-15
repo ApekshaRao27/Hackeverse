@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./TeacherDashboard.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-
+import TeacherCharts from "../pages/TeacherCharts";
 const TeacherDashboard = () => {
   const navigate = useNavigate();
 
@@ -87,10 +87,7 @@ const TeacherDashboard = () => {
         </div>
 
         {/* Weak Topic (placeholder until analytics added) */}
-        <div className="overview-card">
-          <h3>Most Weak Topic</h3>
-          <p className="metric highlight">Coming Soon</p>
-        </div>
+       
 
       </div>
 
@@ -102,16 +99,12 @@ const TeacherDashboard = () => {
 
           <div className="analytics-card">
             <h4>Topic-wise Accuracy</h4>
-            <div className="chart-placeholder">
-              (Will connect charts next)
-            </div>
+           <TeacherCharts />
           </div>
 
           <div className="analytics-card">
             <h4>Performance Trend (Last 7 Days)</h4>
-            <div className="chart-placeholder">
-              (Requires attempt tracking API)
-            </div>
+            <TeacherCharts />
           </div>
 
           <div className="analytics-card">

@@ -34,11 +34,13 @@ export const createUser = async (req, res) => {
 };
 
 export const updateUser = async (req, res) => {
+  console.log("Updating User ID:", req.params.id);
+  console.log("Data received:", req.body);
   try {
     const user = await User.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json(user);
@@ -69,7 +71,20 @@ export const login = async (req, res) => {
       id: user._id,
       name: user.name,
       role: user.role,
+      xp: user.xp || 0
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getLeaderboard = async (req, res) => {
+  try {
+    const topStudents = await User.find({ role: "student" })
+      .sort({ xp: -1 }) // Sort by XP: High to Low
+      .limit(10)        // Get top 10
+      .select("name xp"); // Only return necessary data
+    res.json(topStudents);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

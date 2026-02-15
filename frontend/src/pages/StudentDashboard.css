@@ -1,267 +1,219 @@
-/* ========== GLOBAL ========== */
-body {
-  margin: 0;
-  font-family: "Poppins", sans-serif;
-  background: #0f172a;
-  color: white;
+/* StudentDashboard.css */
+
+/* --- Base Layout --- */
+:root {
+  --primary: #6366f1;
+  --secondary: #a855f7;
+  --bg-dark: #0f172a;
+  --card-bg: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --success: #22c55e;
+  --warning: #f59e0b;
 }
 
-/* ========== NAVBAR ========== */
+body {
+  margin: 0;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Centering Wrapper */
+/* This ensures that everything inside the main views stays in the middle */
+.dashboard-container, 
+.quiz-container, 
+.quiz-result {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Vertical Center */
+  align-items: center;     /* Horizontal Center */
+  min-height: calc(100vh - 80px); /* Adjust for Navbar height */
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* --- Navbar --- */
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #111827;
-  padding: 15px 40px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-}
-
-.navbar-brand {
-  font-size: 24px;
-  font-weight: 700;
-  color: #60a5fa;
+  padding: 0 5%;
+  height: 70px;
+  background: var(--card-bg);
+  border-bottom: 1px solid #334155;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .navbar-links {
   display: flex;
-  gap: 25px;
   list-style: none;
+  gap: 2rem;
 }
 
 .nav-link {
+  color: var(--text-muted);
   text-decoration: none;
-  color: #e5e7eb;
-  font-weight: 500;
-  transition: 0.25s;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.nav-link:hover {
-  color: #60a5fa;
+.nav-link.active {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
 }
 
-/* ========== DASHBOARD LAYOUT ========== */
-
-.dashboard-container {
-  padding: 40px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-}
-
-/* ========== XP CARD ========== */
-
-.xp-card {
-  background: linear-gradient(135deg, #1e3a8a, #3b82f6);
-  padding: 25px;
-  border-radius: 18px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-}
-
-.xp-bar {
-  margin-top: 15px;
-  height: 12px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.xp-fill {
-  height: 100%;
-  background: #22c55e;
-  transition: width 0.4s ease;
-}
-
-/* ========== BATTLE CARD ========== */
-
+/* --- Battle Card (Centered Top) --- */
 .battle-card {
-  background: linear-gradient(135deg, #7c3aed, #c084fc);
-  padding: 25px;
-  border-radius: 18px;
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  padding: 3rem;
+  border-radius: 24px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  border: 1px solid var(--primary);
+  width: 100%;
+  max-width: 600px; /* Constrain width to keep it neat */
+  margin-bottom: 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .battle-btn {
-  margin-top: 15px;
-  padding: 12px 25px;
-  border: none;
-  background: #111827;
+  background: var(--primary);
   color: white;
+  border: none;
+  padding: 15px 40px;
   border-radius: 12px;
+  font-weight: 800;
+  font-size: 1.2rem;
   cursor: pointer;
-  font-weight: bold;
-  transition: 0.25s;
+  transition: transform 0.2s;
+  margin-top: 15px;
 }
 
 .battle-btn:hover {
   transform: scale(1.05);
-  background: black;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
 }
 
-/* ========== QUIZ LIST ========== */
-
+/* --- Quiz Grid --- */
 .quiz-list {
-  grid-column: span 2;
+  width: 100%;
+  text-align: center;
 }
 
 .quiz-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
+  width: 100%;
+  margin-top: 20px;
 }
 
 .quiz-card {
-  background: #1f2937;
-  padding: 20px;
-  border-radius: 16px;
+  background: var(--card-bg);
+  padding: 25px;
+  border-radius: 20px;
+  border: 1px solid #334155;
+  transition: all 0.3s ease;
   cursor: pointer;
-  transition: 0.25s;
-  position: relative;
 }
 
 .quiz-card:hover {
-  transform: translateY(-6px);
-  background: #374151;
+  border-color: var(--secondary);
+  transform: translateY(-8px);
+  background: #242f44;
 }
 
-.start-label {
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
-  color: #60a5fa;
-  font-weight: bold;
-}
-
-/* ========== LEADERBOARD ========== */
-
-.leaderboard {
-  background: #1f2937;
-  padding: 20px;
-  border-radius: 18px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-}
-
-.leaderboard ul {
-  list-style: none;
-  padding: 0;
-}
-
-.leaderboard li {
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-/* ========== QUIZ SCREEN ========== */
-
+/* --- Quiz Play Screen (Centered Card) --- */
 .quiz-container {
-  max-width: 700px;
-  margin: 40px auto;
-  background: #1f2937;
-  padding: 30px;
-  border-radius: 18px;
-  text-align: center;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+  max-width: 600px; /* Keeps the quiz focused in the center */
 }
 
-/* Progress Bar */
-.progress-bar {
-  height: 10px;
-  background: #374151;
-  border-radius: 10px;
-  margin: 20px 0;
-  overflow: hidden;
+.quiz-container h2 {
+  margin-bottom: 10px;
+  color: var(--secondary);
 }
-
-.progress-fill {
-  height: 100%;
-  background: #22c55e;
-  transition: width 0.4s ease;
-}
-
-/* ========== OPTIONS ========== */
-
-.options-list {
-  list-style: none;
-  padding: 0;
-  margin-top: 20px;
-}
-
-.option-button {
-  width: 100%;
-  padding: 14px;
-  margin: 10px 0;
-  border: none;
-  border-radius: 12px;
-  background: #111827;
-  color: white;
-  cursor: pointer;
-  transition: 0.2s;
-  font-size: 16px;
-}
-
-.option-button:hover {
-  background: #2563eb;
-}
-
-.option-button.selected {
-  background: #22c55e;
-}
-
-/* ========== BUTTONS ========== */
-
-.primary-btn,
-.next-button {
-  margin-top: 20px;
-  padding: 12px 28px;
-  border: none;
-  border-radius: 12px;
-  background: #2563eb;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.25s;
-}
-
-.primary-btn:hover,
-.next-button:hover {
-  background: #1d4ed8;
-  transform: scale(1.05);
-}
-
-.primary-btn:disabled {
-  background: gray;
-  cursor: not-allowed;
-}
-
-/* ========== DIFFICULTY FILTER ========== */
 
 .difficulty-filter {
-  margin: 15px 0;
+  margin: 20px 0;
+  display: flex;
+  gap: 8px;
 }
 
 .filter-btn {
-  margin: 5px;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 10px;
-  background: #374151;
-  color: white;
+  background: #0f172a;
+  border: 1px solid #475569;
+  color: var(--text-muted);
+  padding: 8px 16px;
+  border-radius: 20px;
   cursor: pointer;
 }
 
 .filter-btn.active {
-  background: #22c55e;
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
 }
 
-/* ========== RESULT SCREEN ========== */
+.options-list {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+  margin: 25px 0;
+}
 
+.option-button {
+  width: 100%;
+  padding: 18px;
+  margin-bottom: 12px;
+  background: #0f172a;
+  border: 2px solid #334155;
+  border-radius: 15px;
+  color: white;
+  text-align: left;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.option-button.selected {
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+}
+
+.quiz-actions {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+/* --- Result Screen --- */
 .quiz-result {
   text-align: center;
-  margin-top: 80px;
+}
+
+.quiz-result h2 {
+  font-size: 3.5rem;
+  background: linear-gradient(to bottom, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .score {
-  font-size: 22px;
-  margin: 20px 0;
-  color: #22c55e;
+  font-size: 2rem;
+  color: var(--success);
+  margin-top: 10px;
+}
+
+/* --- Responsive Fixes --- */
+@media (max-width: 600px) {
+  .quiz-actions {
+    flex-direction: column;
+  }
 }

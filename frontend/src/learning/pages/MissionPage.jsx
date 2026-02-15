@@ -1,15 +1,19 @@
+
 import "../learning.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react"; // Added useContext
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { XpContext } from "../../XPContext.jsx"; // Double check this path!
 
 function MissionPage() {
-  const { id } = useParams(); // mission ID from URL
+  const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Initialize context
+  const { xp, addXp } = useContext(XpContext);
 
   const { subject, mission } = location.state || {};
 
-  // Redirect if no data
   useEffect(() => {
     if (!subject || !mission) navigate("/learning");
   }, [subject, mission, navigate]);
@@ -18,7 +22,6 @@ function MissionPage() {
 
   const totalLevels = 5;
   const [currentLevel, setCurrentLevel] = useState(1);
-  const [xp, setXp] = useState(0);
   const [missionCompleted, setMissionCompleted] = useState(false);
   const [showXpPop, setShowXpPop] = useState(false);
 
@@ -200,23 +203,25 @@ const aptitudeLevels = {
   }
 };
 
-const levelsData = {
-  "Operating Systems": osLevels,
-  "Computer Networks": networkLevels,
-  "Aptitude": aptitudeLevels
-};
+  const levelsData = {
+    "Operating Systems": osLevels,
+    "Computer Networks": networkLevels,
+    "Aptitude": aptitudeLevels
+  };
 
-const levelData = levelsData[subject.name];
-const current = levelData[currentLevel.toString()];
-  
+  const levelData = levelsData[subject.name];
+  const current = levelData[currentLevel.toString()];
 
   const nextLevel = () => {
-    setXp(prev => prev + current.xp);
+    addXp(current.xp); 
     setShowXpPop(true);
     setTimeout(() => setShowXpPop(false), 1200);
 
-    if (currentLevel < totalLevels) setCurrentLevel(prev => prev + 1);
-    else setMissionCompleted(true);
+    if (currentLevel < totalLevels) {
+      setCurrentLevel(prev => prev + 1);
+    } else {
+      setMissionCompleted(true);
+    }
   };
 
   const progressPercent = (currentLevel / totalLevels) * 100;
