@@ -12,6 +12,7 @@ const StudentDashboard = () => {
   const [selectedOption, setSelectedOption] = useState("");
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
+  const [answersLog, setAnswersLog] = useState([]);
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [lifelineUsed, setLifelineUsed] = useState(false);
@@ -81,10 +82,14 @@ const StudentDashboard = () => {
 
   // Next question
   const handleNext = () => {
-    if (selectedOption === filteredQuestions[currentQuestion].correctAnswer) {
+    const question = filteredQuestions[currentQuestion];
+    const isCorrect = selectedOption === question.correctAnswer;
+    const questionIndex = selectedQuiz.questions.indexOf(question);
+
+    if (isCorrect) {
       // XP calculation
       let questionXP = 0;
-      const difficulty = filteredQuestions[currentQuestion].difficulty;
+      const difficulty = question.difficulty;
       if (difficulty === "easy") questionXP = 10;
       else if (difficulty === "medium") questionXP = 20;
       else if (difficulty === "hard") questionXP = 30;
@@ -100,6 +105,39 @@ const StudentDashboard = () => {
       setSelectedOption("");
       setLifelineUsed(false);
     } else {
+      // Submit attempt when quiz ends
+      const newAnswer = {
+        questionIndex: questionIndex >= 0 ? questionIndex : currentQuestion,
+        selected: selectedOption,
+        correct: isCorrect
+      };
+      const answers = selectedQuiz.questions.map((q, idx) => ({
+        questionIndex: idx,
+        selected: selectedOption,
+        correct: isCorrect
+      }));
+      
+      (async () => {
+        try {
+          const raw = localStorage.getItem("user");
+          if (raw) {
+            const storedUser = JSON.parse(raw);
+            const userData = Array.isArray(storedUser) ? storedUser[0] : storedUser;
+            const studentId = userData?._id || userData?.id;
+            if (studentId) {
+              await axios.post("http://localhost:5000/api/attempts", {
+                studentId,
+                questionSetId: selectedQuiz._id,
+                answers: [newAnswer],
+                score
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error submitting attempt:", err);
+        }
+      })();
+      
       setShowResult(true);
     }
   };
@@ -124,6 +162,9 @@ const StudentDashboard = () => {
         </li>
         <li>
           <Link to="/learning" className="nav-link">Learning Materials</Link>
+        </li>
+        <li>
+          <Link to="/weak-points" className="nav-link">Weak Points</Link>
         </li>
         <li>
           <span 

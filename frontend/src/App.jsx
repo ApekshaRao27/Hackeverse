@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Auth from "./pages/Auth.jsx";
 import TeacherDashboard from "./pages/TeacherDashboard.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
+import WeakPoints from "./pages/WeakPoints.jsx";
 import CreateQuiz from "./pages/CreateQuiz.jsx";
 
 import LearningPage from "./learning/pages/learningPage.jsx";
@@ -23,6 +24,7 @@ function App() {
 
           {/* Student routes */}
           <Route path="/student-dashboard" element={<StudentDashboard />} />
+          <Route path="/weak-points" element={<WeakPoints />} />
 
           {/* Learning routes */}
           <Route path="/learning" element={<LearningPage />} />
