@@ -226,3 +226,20 @@ body {
     border-radius: 10px;
     width: fit-content;
   }
+
+  .back-btn {
+  margin-bottom: 20px;
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  background: linear-gradient(45deg, #ff9800, #ff5722);
+  color: white;
+  transition: 0.3s;
+}
+
+.back-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px #ff9800;
+}

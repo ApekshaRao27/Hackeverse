@@ -1,6 +1,12 @@
+
+
 import "../learning.css";
+import { useNavigate } from "react-router-dom";
 
 function LearningHome({ goToSubject }) {
+
+  const navigate = useNavigate();   
+
   const subjects = [
     { id: 1, name: "Operating Systems", icon: "🧠" },
     { id: 2, name: "Computer Networks", icon: "🌐" },
@@ -9,7 +15,16 @@ function LearningHome({ goToSubject }) {
 
   return (
     <div className="learning-container">
+
+      <button 
+        className="back-btn"
+        onClick={() => navigate("/student-dashboard")}
+      >
+        ⬅ Back to Dashboard
+      </button>
+
       <h2 className="learning-title">📚 Learning Arena</h2>
+
       {subjects.map((subject) => (
         <div
           key={subject.id}
@@ -27,3 +42,4 @@ function LearningHome({ goToSubject }) {
 }
 
 export default LearningHome;
+
