@@ -22,7 +22,7 @@ The system follows a MERN stack architecture with real-time bidirectional commun
 
 ### 👩‍🏫 For Teachers
 * **Analytical Dashboard:** Monitor total students, active quizzes, and weak topics.
-* **Quiz Creator:** Streamlined interface for generating complex quiz sets with varying difficulty levels.
+* **Quiz Creator:** Streamlined interface for generating complex quiz sets.
 * **Performance Tracking:** Visual insights into student accuracy and trends.
 
 ---
@@ -46,71 +46,53 @@ The system follows a MERN stack architecture with real-time bidirectional commun
 * MongoDB Atlas account or local instance
 
 ### Backend Installation
-1.  Navigate to the backend directory:
-    ```bash
-    cd backend
-    ```
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
+1.  Navigate to the backend directory: `cd backend`
+2.  Install dependencies: `npm install`
 3.  Create a `.env` file in the `backend` root:
     ```env
     PORT=5000
     MONGO_URI=your_mongodb_connection_string
     OPENAI_API_KEY=your_openai_api_key
     ```
-4.  Start the server:
-    ```bash
-    node src/server.js
-    ```
+4.  Start the server: `node src/server.js`
 
 ### Frontend Installation
-1.  Navigate to the frontend directory:
-    ```bash
-    cd frontend
-    ```
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-3.  Start the development server:
-    ```bash
-    npm start
-    ```
+1.  Navigate to the frontend directory: `cd frontend`
+2.  Install dependencies: `npm install`
+3.  Start the development server: `npm start`
 
 ---
 
 ## 📡 Socket.io Communication Flow
-
-The Battle Mode relies on specific event listeners to sync scores and start matches.
 
 
 
 | Event | Type | Description |
 | :--- | :--- | :--- |
 | `joinBattle` | Emit | Adds user to the matchmaking queue |
-| `waiting` | Listen | Server signals it's looking for an opponent |
 | `battleStart` | Listen | Match found; initializes questions and room ID |
 | `submitAnswer` | Emit | Sends chosen option to server for validation |
 | `scoreUpdate` | Listen | Broadcasts live score changes to both players |
-| `battleEnded` | Listen | Finalizes scores and declares a winner |
 
 ---
 
-## 📁 Project Structure
+## 📁 Detailed Folder Structure
 
+### 🖥️ Backend (Server-Side)
 ```text
-Hackeverse/
-├── backend/
-│   ├── src/
-│   │   ├── controllers/   # AI, Quiz, and User logic
-│   │   ├── models/        # Mongoose schemas
-│   │   ├── routes/        # API endpoints
-│   │   └── server.js      # App entry & Socket config
-│   └── .env               # Secrets
-└── frontend/
-    ├── src/
-    │   ├── pages/    # Teacher & Student views
-    │   ├── socket.js      # Socket.io client instance
-    │   └── App.js         # Navigation & Routes
+backend/
+├── src/
+│   ├── controllers/
+│   │   ├── aiQuiz.controller.js  # OpenAI logic
+│   │   ├── auth.controller.js    # Login/Register logic
+│   │   └── quiz.controller.js    # CRUD for Quiz Sets
+│   ├── models/
+│   │   ├── Question.js           # Quiz Schema
+│   │   └── User.js               # User & XP Schema
+│   ├── routes/
+│   │   ├── ai.routes.js          # /api/ai endpoints
+│   │   ├── dashboard.routes.js   # /api/dashboard stats
+│   │   └── quiz.routes.js        # /api/questions endpoints
+│   └── server.js                 # Entry point & Socket.io logic
+├── .env                          # API Keys & Secrets
+└── package.json                  # Dependencies
