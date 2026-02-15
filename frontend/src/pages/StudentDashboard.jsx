@@ -2,9 +2,10 @@ import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import Confetti from "react-confetti";
 import { Link } from "react-router-dom";
-import { XpContext } from "../XPContext.jsx"; // make sure path is correct
+import { XpContext } from "../XPContext.jsx";
 import "./StudentDashboard.css";
 import Leaderboard from "./Leaderboard";
+
 const StudentDashboard = () => {
   const [quizSets, setQuizSets] = useState([]);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
@@ -15,10 +16,17 @@ const StudentDashboard = () => {
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [lifelineUsed, setLifelineUsed] = useState(false);
-  const [activeTab, setActiveTab] = useState("quizzes"); 
-  const { xp, addXp, resetXp } = useContext(XpContext);
+  const [activeTab, setActiveTab] = useState("quizzes");
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+const [aiDifficulty, setAiDifficulty] = useState("medium");
+const [aiCount, setAiCount] = useState(5);
 
-  // Fetch quizzes
+
+
+  const { xp, addXp } = useContext(XpContext);
+
+  // Fetch existing quizzes
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
@@ -33,18 +41,28 @@ const StudentDashboard = () => {
 
   // Apply difficulty filter
   useEffect(() => {
-    if (!selectedQuiz) return;
+  if (!selectedQuiz || !selectedQuiz.questions) return;
 
-    if (difficultyFilter === "all") setFilteredQuestions(selectedQuiz.questions);
-    else
-      setFilteredQuestions(
-        selectedQuiz.questions.filter((q) => q.difficulty === difficultyFilter)
-      );
+  // If questions don't have difficulty, skip filtering
+  const hasDifficulty =
+    selectedQuiz.questions.length > 0 &&
+    selectedQuiz.questions[0].difficulty;
 
-    setCurrentQuestion(0);
-    setSelectedOption("");
-    setLifelineUsed(false);
-  }, [selectedQuiz, difficultyFilter]);
+  if (!hasDifficulty || difficultyFilter === "all") {
+    setFilteredQuestions(selectedQuiz.questions);
+  } else {
+    setFilteredQuestions(
+      selectedQuiz.questions.filter(
+        (q) => q.difficulty === difficultyFilter
+      )
+    );
+  }
+
+  setCurrentQuestion(0);
+  setSelectedOption("");
+  setLifelineUsed(false);
+}, [selectedQuiz, difficultyFilter]);
+
 
   // Start quiz
   const startQuiz = (quiz) => {
@@ -55,43 +73,106 @@ const StudentDashboard = () => {
     setScore(0);
     setShowResult(false);
     setLifelineUsed(false);
-
   };
 
-  // Option select
+  // 🔥 Generate AI Quiz
+ // 🔥 Generate AI Quiz (FINAL FIXED VERSION)
+// 🔥 Generate AI Quiz (DEBUG VERSION)
+const generateAIQuiz = async () => {
+
+  if (!aiTopic.trim()) {
+  alert("Please enter a topic first");
+  return;
+}
+
+  try {
+    setLoadingAI(true);
+    console.log("1. Requesting AI Quiz..."); // LOG 1
+
+    const res = await axios.post(
+      "http://localhost:5000/api/ai-quiz",
+      {
+       topic: aiTopic,
+    difficulty: aiDifficulty,
+    count: aiCount,
+      }
+    );
+
+    console.log("2. Backend Response:", res.data); // LOG 2 - Check if this matches Postman
+
+    // 🛠 Add difficulty field if missing
+    const questionsWithDifficulty = res.data.questions.map((q) => ({
+      ...q,
+      difficulty: q.difficulty || "medium"
+    }));
+
+    const formattedQuiz = {
+      title: res.data.title || "AI Generated Quiz",
+      topic: res.data.topic || "AI Topic",
+      questions: questionsWithDifficulty,
+    };
+
+    console.log("3. Formatted Quiz Object:", formattedQuiz); // LOG 3 - Is questions empty?
+
+    // Reset everything cleanly
+    setSelectedQuiz(formattedQuiz);
+    setDifficultyFilter("all");
+    setCurrentQuestion(0);
+    setSelectedOption("");
+    setScore(0);
+    setShowResult(false);
+    setLifelineUsed(false);
+
+    console.log("4. All states updated!"); // LOG 4
+
+  } catch (err) {
+    console.error("AI Quiz Error:", err);
+    alert("Failed to generate AI quiz");
+  } finally {
+    setLoadingAI(false);
+  }
+};
+
+
   const handleOptionSelect = (opt) => setSelectedOption(opt);
 
-  // Lifeline 50-50
   const useFiftyFifty = () => {
     if (lifelineUsed) return;
 
-    const correct = filteredQuestions[currentQuestion].correctAnswer;
-    const options = filteredQuestions[currentQuestion].options;
-    const wrongOptions = options.filter((opt) => opt !== correct);
-    const reduced = [correct, wrongOptions[Math.floor(Math.random() * wrongOptions.length)]];
+    const correct =
+      filteredQuestions[currentQuestion].correctAnswer;
+    const options =
+      filteredQuestions[currentQuestion].options;
+
+    const wrongOptions = options.filter(
+      (opt) => opt !== correct
+    );
+
+    const reduced = [
+      correct,
+      wrongOptions[Math.floor(Math.random() * wrongOptions.length)],
+    ];
 
     setFilteredQuestions((prev) => {
       const copy = [...prev];
-      copy[currentQuestion] = { ...copy[currentQuestion], options: reduced };
+      copy[currentQuestion] = {
+        ...copy[currentQuestion],
+        options: reduced,
+      };
       return copy;
     });
 
     setLifelineUsed(true);
   };
 
-  // Next question
   const handleNext = () => {
-    if (selectedOption === filteredQuestions[currentQuestion].correctAnswer) {
-      // XP calculation
-      let questionXP = 0;
-      const difficulty = filteredQuestions[currentQuestion].difficulty;
-      if (difficulty === "easy") questionXP = 10;
-      else if (difficulty === "medium") questionXP = 20;
-      else if (difficulty === "hard") questionXP = 30;
-
+    if (
+      selectedOption ===
+      filteredQuestions[currentQuestion].correctAnswer
+    ) {
+      let questionXP = 20;
       if (lifelineUsed) questionXP = Math.floor(questionXP / 2);
-
-      addXp(questionXP); // ✅ add XP to context
+      addXp(questionXP);
       setScore((prev) => prev + 1);
     }
 
@@ -101,151 +182,215 @@ const StudentDashboard = () => {
       setLifelineUsed(false);
     } else {
       setShowResult(true);
-       setTimeout(() => {
-    setSelectedQuiz(null);
-    setShowResult(false);
-  }, 3000);
+
+      // Auto return to dashboard
+      setTimeout(() => {
+        setSelectedQuiz(null);
+        setShowResult(false);
+      }, 3000);
     }
   };
 
-  // Navbar
   const Navbar = () => (
     <nav className="navbar">
-      <h2 className="navbar-brand">Student Dashboard</h2>
+      <h2>Student Dashboard</h2>
       <ul className="navbar-links">
         <li>
-          {/* Clicking this sets tab back to quizzes and clears selected quiz */}
-          <span 
-            className={`nav-link ${activeTab === "quizzes" ? "active" : ""}`} 
+          <span
+            className={`nav-link ${
+              activeTab === "quizzes" ? "active" : ""
+            }`}
             onClick={() => {
               setActiveTab("quizzes");
               setSelectedQuiz(null);
             }}
-            style={{cursor: 'pointer'}}
           >
             Quiz
           </span>
         </li>
         <li>
-          <Link to="/learning" className="nav-link">Learning Materials</Link>
+          <Link to="/learning" className="nav-link">
+            Learning Materials
+          </Link>
         </li>
         <li>
-          <span 
-            className={`nav-link ${activeTab === "leaderboard" ? "active" : ""}`} 
+          <span
+            className={`nav-link ${
+              activeTab === "leaderboard" ? "active" : ""
+            }`}
             onClick={() => setActiveTab("leaderboard")}
-            style={{cursor: 'pointer'}}
           >
             Leaderboard 🏆
           </span>
         </li>
       </ul>
-      <div className="xp-display">⭐ Total XP: {xp}</div>
+      <div className="xp-display">⭐ XP: {xp}</div>
     </nav>
   );
 
   if (activeTab === "leaderboard") {
     return (
-      <div>
+      <>
         <Navbar />
-        <Leaderboard /> 
-      </div>
+        <Leaderboard />
+      </>
     );
   }
 
-  // Result screen
-if (showResult)
-  return (
-    <div>
-      <Navbar />
-      <Confetti recycle={false} numberOfPieces={300} />
-      <div className="quiz-result">
-        <h2>🎉 Quiz Completed! 🎉</h2>
-        <p className="score">
-          You scored {score} / {filteredQuestions.length}
-        </p>
-        <p>Returning to dashboard...</p>
-      </div>
-    </div>
-  );
-
-
-  // Quiz selection
-  if (!selectedQuiz)
+  if (showResult) {
     return (
-      <div>
+      <>
         <Navbar />
-        <div className="quiz-list">
-          <h2>Available Quizzes</h2>
-          {quizSets.map((q) => (
-            <div key={q._id} className="quiz-card" onClick={() => startQuiz(q)}>
-              <h3>{q.title}</h3>
-              <p>Topic: {q.topic}</p>
-              <p>Questions: {q.questions.length}</p>
-            </div>
-          ))}
+        <Confetti recycle={false} numberOfPieces={300} />
+        <div className="quiz-result">
+          <h2>🎉 Quiz Completed!</h2>
+          <p>
+            You scored {score} / {filteredQuestions.length}
+          </p>
+          <p>Returning to dashboard...</p>
         </div>
-      </div>
+      </>
     );
+  }
 
-  // Quiz question
+  if (!selectedQuiz) {
+  return (
+    <>
+      <Navbar />
+      <div className="quiz-list">
+        <h2>Available Quizzes</h2>
+
+        <div className="ai-input-section">
+          
+          <input
+            type="text"
+            placeholder="Enter topic (e.g. DBMS, OS, Java)"
+            value={aiTopic}
+            onChange={(e) => setAiTopic(e.target.value)}
+            className="ai-input"
+          />
+
+          <select
+            value={aiDifficulty}
+            onChange={(e) => setAiDifficulty(e.target.value)}
+            className="ai-select"
+          >
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+
+          <input
+            type="number"
+            value={aiCount}
+            min="1"
+            max="10"
+            onChange={(e) => setAiCount(Number(e.target.value))}
+            className="ai-count-input"
+          />
+
+          <button
+            className="ai-generate-btn"
+            onClick={generateAIQuiz}
+            disabled={loadingAI || !aiTopic}
+          >
+            {loadingAI ? "🤖 Generating..." : "✨ Generate AI Quiz"}
+          </button>
+
+        </div>
+
+        {quizSets.map((q) => (
+          <div
+            key={q._id}
+            className="quiz-card"
+            onClick={() => startQuiz(q)}
+          >
+            <h3>{q.title}</h3>
+            <p>Topic: {q.topic}</p>
+            <p>Questions: {q.questions.length}</p>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+  if (!filteredQuestions.length) {
+  return (
+    <>
+      <Navbar />
+      <div className="quiz-container">
+        <p>Loading quiz...</p>
+      </div>
+    </>
+  );
+}
+
   const question = filteredQuestions[currentQuestion];
+  console.log("Filtered Questions:", filteredQuestions);
+
 
   return (
-    <div>
+    <>
       <Navbar />
       <div className="quiz-container">
         <h2>{selectedQuiz.title}</h2>
 
-        {/* Difficulty Filter */}
-        <div className="difficulty-filter">
-          <span>Filter by difficulty: </span>
-          {["all", "easy", "medium", "hard"].map((level) => (
-            <button
-              key={level}
-              className={`filter-btn ${difficultyFilter === level ? "active" : ""}`}
-              onClick={() => setDifficultyFilter(level)}
-            >
-              {level.charAt(0).toUpperCase() + level.slice(1)}
-            </button>
-          ))}
-        </div>
+        <p>
+          Question {currentQuestion + 1} of{" "}
+          {filteredQuestions.length}
+        </p>
+        <div className="progress-bar">
+  <div
+    className="progress-fill"
+    style={{
+      width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%`
+    }}
+  />
+</div>
+        <h3>{question.questionText}</h3>
 
-        {filteredQuestions.length === 0 ? (
-          <p>No questions for this difficulty</p>
-        ) : (
-          <>
-            <p>Question {currentQuestion + 1} of {filteredQuestions.length}</p>
-            <h3>{question.questionText}</h3>
-            <ul className="options-list">
-              {question.options.map((opt) => (
-                <li key={opt}>
-                  <button
-                    className={`option-button ${selectedOption === opt ? "selected" : ""}`}
-                    onClick={() => handleOptionSelect(opt)}
-                  >
-                    {opt}
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            <div className="quiz-actions">
-              <button onClick={useFiftyFifty} disabled={lifelineUsed} className="lifeline-btn">
-                50-50 Lifeline
-              </button>
+        <ul className="options-list">
+          {question.options.map((opt) => (
+            <li key={opt}>
               <button
-                onClick={handleNext}
-                disabled={!selectedOption}
-                className="next-button"
+                className={`option-button ${
+                  selectedOption === opt ? "selected" : ""
+                }`}
+                onClick={() => handleOptionSelect(opt)}
               >
-                {currentQuestion + 1 === filteredQuestions.length ? "Submit" : "Next"}
+                {opt}
               </button>
-            </div>
-          </>
-        )}
+            </li>
+          ))}
+        </ul>
+
+        <div className="quiz-actions">
+          <button
+            onClick={useFiftyFifty}
+            disabled={lifelineUsed}
+            className="lifeline-btn"
+          >
+            50-50 Lifeline
+          </button>
+
+          <button
+            onClick={handleNext}
+            disabled={!selectedOption}
+            className="next-button"
+          >
+            {currentQuestion + 1 ===
+            filteredQuestions.length
+              ? "Submit"
+              : "Next"}
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
 export default StudentDashboard;
+
+
+
