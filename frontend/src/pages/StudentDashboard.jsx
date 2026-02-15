@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import Confetti from "react-confetti";
-import "./StudentDashboard.css"; 
 import { Link } from "react-router-dom";
+import { XpContext } from "../XPContext.jsx"; // make sure path is correct
+import "./StudentDashboard.css";
+import Leaderboard from "./Leaderboard";
 const StudentDashboard = () => {
   const [quizSets, setQuizSets] = useState([]);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
@@ -12,7 +14,11 @@ const StudentDashboard = () => {
   const [showResult, setShowResult] = useState(false);
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [filteredQuestions, setFilteredQuestions] = useState([]);
+  const [lifelineUsed, setLifelineUsed] = useState(false);
+  const [activeTab, setActiveTab] = useState("quizzes"); 
+  const { xp, addXp, resetXp } = useContext(XpContext);
 
+  // Fetch quizzes
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
@@ -25,7 +31,7 @@ const StudentDashboard = () => {
     fetchQuizzes();
   }, []);
 
-  // Apply difficulty filter when quiz or filter changes
+  // Apply difficulty filter
   useEffect(() => {
     if (!selectedQuiz) return;
 
@@ -34,13 +40,13 @@ const StudentDashboard = () => {
       setFilteredQuestions(
         selectedQuiz.questions.filter((q) => q.difficulty === difficultyFilter)
       );
-    
+
     setCurrentQuestion(0);
     setSelectedOption("");
+    setLifelineUsed(false);
   }, [selectedQuiz, difficultyFilter]);
 
-  if (!quizSets) return <div>Loading...</div>;
-
+  // Start quiz
   const startQuiz = (quiz) => {
     setSelectedQuiz(quiz);
     setDifficultyFilter("all");
@@ -48,46 +54,101 @@ const StudentDashboard = () => {
     setSelectedOption("");
     setScore(0);
     setShowResult(false);
+    setLifelineUsed(false);
+
   };
 
+  // Option select
   const handleOptionSelect = (opt) => setSelectedOption(opt);
 
+  // Lifeline 50-50
+  const useFiftyFifty = () => {
+    if (lifelineUsed) return;
+
+    const correct = filteredQuestions[currentQuestion].correctAnswer;
+    const options = filteredQuestions[currentQuestion].options;
+    const wrongOptions = options.filter((opt) => opt !== correct);
+    const reduced = [correct, wrongOptions[Math.floor(Math.random() * wrongOptions.length)]];
+
+    setFilteredQuestions((prev) => {
+      const copy = [...prev];
+      copy[currentQuestion] = { ...copy[currentQuestion], options: reduced };
+      return copy;
+    });
+
+    setLifelineUsed(true);
+  };
+
+  // Next question
   const handleNext = () => {
     if (selectedOption === filteredQuestions[currentQuestion].correctAnswer) {
+      // XP calculation
+      let questionXP = 0;
+      const difficulty = filteredQuestions[currentQuestion].difficulty;
+      if (difficulty === "easy") questionXP = 10;
+      else if (difficulty === "medium") questionXP = 20;
+      else if (difficulty === "hard") questionXP = 30;
+
+      if (lifelineUsed) questionXP = Math.floor(questionXP / 2);
+
+      addXp(questionXP); // ✅ add XP to context
       setScore((prev) => prev + 1);
     }
 
     if (currentQuestion + 1 < filteredQuestions.length) {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedOption("");
+      setLifelineUsed(false);
     } else {
       setShowResult(true);
     }
   };
 
+  // Navbar
   const Navbar = () => (
     <nav className="navbar">
       <h2 className="navbar-brand">Student Dashboard</h2>
       <ul className="navbar-links">
         <li>
-          <Link to="/student-dashboard" className="nav-link">
+          {/* Clicking this sets tab back to quizzes and clears selected quiz */}
+          <span 
+            className={`nav-link ${activeTab === "quizzes" ? "active" : ""}`} 
+            onClick={() => {
+              setActiveTab("quizzes");
+              setSelectedQuiz(null);
+            }}
+            style={{cursor: 'pointer'}}
+          >
             Quiz
-          </Link>
+          </span>
         </li>
-        <Link to="/learning" className="nav-link">
-  Learning Materials
-</Link>
-
         <li>
-          <Link to="/" className="nav-link">
-            Profile
-          </Link>
+          <Link to="/learning" className="nav-link">Learning Materials</Link>
+        </li>
+        <li>
+          <span 
+            className={`nav-link ${activeTab === "leaderboard" ? "active" : ""}`} 
+            onClick={() => setActiveTab("leaderboard")}
+            style={{cursor: 'pointer'}}
+          >
+            Leaderboard 🏆
+          </span>
         </li>
       </ul>
+      <div className="xp-display">⭐ Total XP: {xp}</div>
     </nav>
   );
 
-  // ===== Result Screen =====
+  if (activeTab === "leaderboard") {
+    return (
+      <div>
+        <Navbar />
+        <Leaderboard /> 
+      </div>
+    );
+  }
+
+  // Result screen
   if (showResult)
     return (
       <div>
@@ -95,27 +156,15 @@ const StudentDashboard = () => {
         <Confetti recycle={false} numberOfPieces={300} />
         <div className="quiz-result">
           <h2>🎉 Congratulations! 🎉</h2>
-          <p className="score">
-            You scored {score} / {filteredQuestions.length}
-          </p>
-          <button
-  className="next-button"
-  onClick={() => {
-    setSelectedQuiz(null);
-    setCurrentQuestion(0);
-    setSelectedOption("");
-    setScore(0);
-    setShowResult(false);
-  }}
->
-  Back to Quiz
-</button>
-
+          <p className="score">You scored {score} / {filteredQuestions.length}</p>
+          <button className="next-button" onClick={() => startQuiz(selectedQuiz)}>
+            Back to Quiz
+          </button>
         </div>
       </div>
     );
 
-  // ===== Quiz Selection =====
+  // Quiz selection
   if (!selectedQuiz)
     return (
       <div>
@@ -133,6 +182,7 @@ const StudentDashboard = () => {
       </div>
     );
 
+  // Quiz question
   const question = filteredQuestions[currentQuestion];
 
   return (
@@ -147,9 +197,7 @@ const StudentDashboard = () => {
           {["all", "easy", "medium", "hard"].map((level) => (
             <button
               key={level}
-              className={`filter-btn ${
-                difficultyFilter === level ? "active" : ""
-              }`}
+              className={`filter-btn ${difficultyFilter === level ? "active" : ""}`}
               onClick={() => setDifficultyFilter(level)}
             >
               {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -161,17 +209,13 @@ const StudentDashboard = () => {
           <p>No questions for this difficulty</p>
         ) : (
           <>
-            <p>
-              Question {currentQuestion + 1} of {filteredQuestions.length}
-            </p>
+            <p>Question {currentQuestion + 1} of {filteredQuestions.length}</p>
             <h3>{question.questionText}</h3>
             <ul className="options-list">
               {question.options.map((opt) => (
                 <li key={opt}>
                   <button
-                    className={`option-button ${
-                      selectedOption === opt ? "selected" : ""
-                    }`}
+                    className={`option-button ${selectedOption === opt ? "selected" : ""}`}
                     onClick={() => handleOptionSelect(opt)}
                   >
                     {opt}
@@ -179,15 +223,19 @@ const StudentDashboard = () => {
                 </li>
               ))}
             </ul>
-            <button
-              onClick={handleNext}
-              disabled={!selectedOption}
-              className="next-button"
-            >
-              {currentQuestion + 1 === filteredQuestions.length
-                ? "Submit"
-                : "Next"}
-            </button>
+
+            <div className="quiz-actions">
+              <button onClick={useFiftyFifty} disabled={lifelineUsed} className="lifeline-btn">
+                50-50 Lifeline
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={!selectedOption}
+                className="next-button"
+              >
+                {currentQuestion + 1 === filteredQuestions.length ? "Submit" : "Next"}
+              </button>
+            </div>
           </>
         )}
       </div>
