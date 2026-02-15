@@ -11,6 +11,13 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+/* VERY IMPORTANT — ignore socket.io path */
+app.use((req, res, next) => {
+  if (req.path.startsWith("/socket.io")) return next();
+  next();
+});
+
+/* your api routes */
 app.use("/api", routes);
 
 export default app;

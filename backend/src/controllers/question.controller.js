@@ -1,45 +1,57 @@
-import { Question } from "../models/Question.js";
-
-export const createQuestion = async (req, res) => {
+import { QuestionSet } from "../models/Question.js";
+// Create a new Question Set (5 questions at once)
+export const createQuestionSet = async (req, res) => {
   try {
-    const question = await Question.create(req.body);
-    res.status(201).json(question);
+    const { title, topic, questions, createdBy } = req.body;
+
+    if (!questions || questions.length < 1)
+      return res.status(400).json({ error: "At least 1 question required" });
+
+    const qset = await QuestionSet.create({ title, topic, questions, createdBy });
+    res.status(201).json(qset);
   } catch (err) {
     if (err.name === "ValidationError") {
       return res.status(400).json({
         error: "Validation failed",
-        details: Object.values(err.errors).map((e) => e.message),
+        details: Object.values(err.errors).map(e => e.message)
       });
     }
     res.status(500).json({ error: err.message });
   }
 };
 
-export const getQuestionsByTopicAndDifficulty = async (req, res) => {
+// Get all question sets (optionally filter by topic)
+export const getQuestionSets = async (req, res) => {
   try {
-    const { topic, difficulty } = req.query;
-    const filter = {};
-
-    if (topic) filter.topic = topic;
-    if (difficulty) filter.difficulty = difficulty;
-
-    const questions = await Question.find(filter).sort({ createdAt: -1 });
-    res.json(questions);
+    const { topic } = req.query;
+    const filter = topic ? { topic } : {};
+    const qsets = await QuestionSet.find(filter).sort({ createdAt: -1 });
+    res.json(qsets);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-export const deleteQuestionById = async (req, res) => {
+// Get single question set by ID
+export const getQuestionSetById = async (req, res) => {
   try {
-    const question = await Question.findByIdAndDelete(req.params.id);
-    if (!question) {
-      return res.status(404).json({ error: "Question not found" });
-    }
+    const qset = await QuestionSet.findById(req.params.id);
+    if (!qset) return res.status(404).json({ error: "Question set not found" });
+    res.json(qset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Delete a question set by ID
+export const deleteQuestionSetById = async (req, res) => {
+  try {
+    const qset = await QuestionSet.findByIdAndDelete(req.params.id);
+    if (!qset) return res.status(404).json({ error: "Question set not found" });
     res.status(204).send();
   } catch (err) {
     if (err.name === "CastError") {
-      return res.status(400).json({ error: "Invalid question id" });
+      return res.status(400).json({ error: "Invalid ID" });
     }
     res.status(500).json({ error: err.message });
   }
