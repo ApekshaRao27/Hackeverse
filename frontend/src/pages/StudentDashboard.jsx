@@ -101,6 +101,10 @@ const StudentDashboard = () => {
       setLifelineUsed(false);
     } else {
       setShowResult(true);
+       setTimeout(() => {
+    setSelectedQuiz(null);
+    setShowResult(false);
+  }, 3000);
     }
   };
 
@@ -149,20 +153,21 @@ const StudentDashboard = () => {
   }
 
   // Result screen
-  if (showResult)
-    return (
-      <div>
-        <Navbar />
-        <Confetti recycle={false} numberOfPieces={300} />
-        <div className="quiz-result">
-          <h2>🎉 Congratulations! 🎉</h2>
-          <p className="score">You scored {score} / {filteredQuestions.length}</p>
-          <button className="next-button" onClick={() => startQuiz(selectedQuiz)}>
-            Back to Quiz
-          </button>
-        </div>
+if (showResult)
+  return (
+    <div>
+      <Navbar />
+      <Confetti recycle={false} numberOfPieces={300} />
+      <div className="quiz-result">
+        <h2>🎉 Quiz Completed! 🎉</h2>
+        <p className="score">
+          You scored {score} / {filteredQuestions.length}
+        </p>
+        <p>Returning to dashboard...</p>
       </div>
-    );
+    </div>
+  );
+
 
   // Quiz selection
   if (!selectedQuiz)
