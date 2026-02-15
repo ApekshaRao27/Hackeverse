@@ -1,4 +1,4 @@
-# 🚀 Hackeverse: AI-Powered Gamified Learning
+# 🚀 DuelLearn: AI-Powered Gamified Learning
 
 Hackeverse is a comprehensive, full-stack educational platform designed to gamify the learning experience. It combines real-time competitive "Battle Mode" duels, AI-driven study assistance, and deep performance analytics for both students and teachers.
 
